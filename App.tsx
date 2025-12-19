@@ -4,17 +4,17 @@ import { Navbar } from './components/Navbar';
 import { Button } from './components/Button';
 import { QuizSession } from './components/QuizSession';
 import { generateSpanishQuestions, fetchGrammarReference, generateWeaknessAnalysis } from './geminiService';
-import { Level, Question, UserProgress } from './types';
+import { Question, UserProgress } from './types';
 import { GRAMMAR_TOPICS, INITIAL_USER_PROGRESS, GRAMMAR_CATEGORIES } from './constants';
 import { 
   CheckCircle, Sparkles, Trophy, 
-  Layers, RefreshCw, Clock, Flame, 
-  Target, Calendar, Brain, TrendingUp, AlertTriangle, BookOpen, Play,
-  ChevronRight
+  Layers, RefreshCw, Flame, 
+  Brain, TrendingUp, AlertTriangle, Play,
+  ChevronRight, Loader2
 } from 'lucide-react';
 import { 
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell 
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, 
+  ResponsiveContainer
 } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 
@@ -27,7 +27,6 @@ const App: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [progress, setProgress] = useState<UserProgress>(INITIAL_USER_PROGRESS);
-  const [lastQuizResult, setLastQuizResult] = useState<{ score: number, total: number, timeSpent: number } | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
 
   useEffect(() => {
@@ -66,17 +65,20 @@ const App: React.FC = () => {
         refTitle = topic?.name || "";
       }
 
+      // 并行请求以节省时间
       const [qs, ref] = await Promise.all([
         generateSpanishQuestions(topicsToFetch, progress.level, 10),
         isMixed ? Promise.resolve(`## Mixed Review\nFocused on your recently practiced topics.`) : fetchGrammarReference(refTitle)
       ]);
       
+      if (qs.length === 0) throw new Error("Failed to generate questions");
+
       setQuestions(qs);
       setReference(ref);
       setStartTime(Date.now());
       setView('quiz');
     } catch (error) {
-      alert("AI generator busy. Please try again.");
+      alert("¡Oye! The AI is taking a siesta. Please try again in a few seconds.");
     } finally {
       setIsLoading(false);
     }
@@ -90,11 +92,12 @@ const App: React.FC = () => {
     
     setProgress(prev => {
       const updatedMastery = { ...prev.topicMastery };
-      const currentMastery = updatedMastery[selectedTopicId!] || 0;
-      updatedMastery[selectedTopicId!] = Math.round(currentMastery * 0.4 + accuracy * 0.6);
+      const tid = selectedTopicId || 'mixed';
+      const currentMastery = updatedMastery[tid] || 0;
+      updatedMastery[tid] = Math.round(currentMastery * 0.4 + accuracy * 0.6);
       
-      const updatedPracticed = prev.practicedTopicIds.includes(selectedTopicId!) 
-        ? prev.practicedTopicIds : [...prev.practicedTopicIds, selectedTopicId!];
+      const updatedPracticed = prev.practicedTopicIds.includes(tid) 
+        ? prev.practicedTopicIds : [...prev.practicedTopicIds, tid];
 
       return {
         ...prev,
@@ -102,7 +105,7 @@ const App: React.FC = () => {
         totalQuestions: prev.totalQuestions + totalQs,
         totalCorrect: prev.totalCorrect + score,
         totalMinutes: prev.totalMinutes + timeSpentMin,
-        streak: prev.streak + 1, // simplified for this demo
+        streak: prev.streak + 1,
         lastStudyDate: new Date().toISOString(),
         averageScore: Math.round(((prev.totalCorrect + score) / (prev.totalQuestions + totalQs)) * 100),
         topicMastery: updatedMastery,
@@ -110,8 +113,6 @@ const App: React.FC = () => {
       };
     });
 
-    setLastQuizResult({ score, total: totalQs, timeSpent: timeSpentMin });
-    setAiAnalysis(null); // Clear old analysis to trigger fresh one next time
     setView('stats');
   };
 
@@ -136,22 +137,38 @@ const App: React.FC = () => {
         .filter(s => s !== undefined);
       
       const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-      return { category: cat.replace(/\(.*?\)/, '').trim(), mastery: avg, full: 100 };
+      return { category: cat.split('(')[0].trim(), mastery: avg, full: 100 };
     });
   }, [progress.topicMastery]);
 
   const recommendedTopic = useMemo(() => {
     const practiced = GRAMMAR_TOPICS.filter(t => progress.practicedTopicIds.includes(t.id));
     if (practiced.length === 0) return GRAMMAR_TOPICS[0];
-    
-    // Find the practiced topic with the lowest score
     const lowest = [...practiced].sort((a, b) => (progress.topicMastery[a.id] || 0) - (progress.topicMastery[b.id] || 0))[0];
     return lowest;
   }, [progress.practicedTopicIds, progress.topicMastery]);
 
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-6 text-center">
+        <div className="relative mb-8">
+          <Loader2 className="w-16 h-16 text-indigo-600 animate-spin" />
+          <Brain className="w-8 h-8 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-800 mb-2 italic">Preparando la lección...</h2>
+        <p className="text-slate-500 font-medium max-w-sm">
+          Gemini is crafting 10 custom DELE B2 challenges and a cheat sheet just for you.
+        </p>
+        <div className="mt-12 p-4 bg-amber-50 rounded-2xl border border-amber-100 max-w-xs">
+          <p className="text-xs text-amber-800 font-bold uppercase tracking-widest mb-2">Pro Tip</p>
+          <p className="text-sm text-amber-700 italic">"Subjunctive flows better when you focus on the emotion behind the choice."</p>
+        </div>
+      </div>
+    );
+  }
+
   const renderDashboard = () => (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-in fade-in duration-500">
-      {/* Dynamic Recommendation Header */}
       {progress.practicedTopicIds.length > 0 && (
         <div className="mb-10 p-6 rounded-[2.5rem] bg-indigo-50 border border-indigo-100 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="flex items-center gap-5">
@@ -161,21 +178,20 @@ const App: React.FC = () => {
             <div>
               <div className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">AI Recommendation</div>
               <h3 className="text-xl font-black text-slate-800">Review: {recommendedTopic?.name}</h3>
-              <p className="text-sm text-slate-500 font-medium">Your current mastery is {progress.topicMastery[recommendedTopic?.id || ''] || 0}%. Let's improve it!</p>
+              <p className="text-sm text-slate-500 font-medium">Mastery: {progress.topicMastery[recommendedTopic?.id || ''] || 0}%</p>
             </div>
           </div>
           <Button size="lg" onClick={() => startQuiz(recommendedTopic?.id || '')} className="rounded-2xl shadow-lg shadow-indigo-200">
-            Fix Weakness <Play className="ml-2 w-4 h-4 fill-current" />
+            Improve This <Play className="ml-2 w-4 h-4 fill-current" />
           </Button>
         </div>
       )}
 
-      {/* Hero */}
       <div className="mb-16 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-slate-200 pb-12">
         <div className="flex-1">
           <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter italic">¡Hispania!</h1>
           <p className="text-xl text-slate-500 max-w-2xl leading-relaxed font-medium">
-            Advanced DELE B2 Grammar Lab. Adaptive drills that analyze your performance to build a custom learning path.
+            Advanced DELE B2 Lab. Dynamic drills to build your mastery.
           </p>
         </div>
         <div className="flex gap-4 w-full lg:w-auto">
@@ -188,7 +204,7 @@ const App: React.FC = () => {
           </button>
           <button 
             onClick={() => startQuiz('mixed', true)} 
-            disabled={isLoading || progress.practicedTopicIds.length === 0}
+            disabled={progress.practicedTopicIds.length === 0}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 bg-slate-900 text-white px-8 py-5 rounded-[2rem] font-bold hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 disabled:opacity-30"
           >
             <Layers className="w-5 h-5 text-amber-400" />
@@ -208,7 +224,6 @@ const App: React.FC = () => {
               {GRAMMAR_TOPICS.filter(t => t.category === category).map(topic => {
                 const mastery = progress.topicMastery[topic.id] || 0;
                 const isPracticed = progress.practicedTopicIds.includes(topic.id);
-                
                 return (
                   <div key={topic.id} className={`bg-white rounded-[3rem] p-10 border transition-all hover:shadow-2xl hover:-translate-y-2 group relative flex flex-col justify-between ${isPracticed ? 'border-indigo-100' : 'border-slate-100 shadow-xl shadow-slate-200/50'}`}>
                     <div>
@@ -225,10 +240,9 @@ const App: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => startQuiz(topic.id)} 
-                      disabled={isLoading}
-                      className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all group-hover:scale-105 active:scale-95"
+                      className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all group-hover:scale-105"
                     >
-                      {isLoading && selectedTopicId === topic.id ? <RefreshCw className="w-6 h-6 animate-spin" /> : <>Practicar <ChevronRight className="w-5 h-5" /></>}
+                      Practicar <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
                 );
@@ -243,12 +257,10 @@ const App: React.FC = () => {
   const renderStats = () => (
     <div className="max-w-6xl mx-auto px-4 py-12 animate-in slide-in-from-bottom-10 duration-700">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        {/* Visual Mastery Radar */}
         <div className="lg:col-span-2 bg-white p-10 rounded-[3.5rem] shadow-xl border border-slate-100 flex flex-col">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h3 className="text-2xl font-black text-slate-800">Mastery Distribution</h3>
-              <p className="text-sm text-slate-400 font-medium">Overview across key grammar pillars</p>
             </div>
             <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
               <TrendingUp className="w-8 h-8" />
@@ -259,19 +271,11 @@ const App: React.FC = () => {
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
                 <PolarGrid stroke="#e2e8f0" />
                 <PolarAngleAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} />
-                <Radar
-                  name="Mastery"
-                  dataKey="mastery"
-                  stroke="#4f46e5"
-                  fill="#4f46e5"
-                  fillOpacity={0.6}
-                />
+                <Radar name="Mastery" dataKey="mastery" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.6} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
         </div>
-
-        {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 gap-8">
            <div className="bg-slate-900 text-white p-10 rounded-[3.5rem] shadow-xl flex flex-col justify-between">
               <div>
@@ -281,18 +285,12 @@ const App: React.FC = () => {
                     <span className="text-lg font-bold opacity-70">Day Streak</span>
                  </div>
                  <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                       <span className="text-sm font-bold opacity-50 uppercase tracking-widest">Total Answers</span>
-                       <span className="text-2xl font-black">{progress.totalQuestions}</span>
-                    </div>
-                    <div className="flex justify-between items-end">
-                       <span className="text-sm font-bold opacity-50 uppercase tracking-widest">Study Time</span>
-                       <span className="text-2xl font-black">{progress.totalMinutes}m</span>
-                    </div>
+                    <div className="flex justify-between items-end"><span className="opacity-50 font-bold uppercase tracking-widest text-xs">Total Qs</span><span className="text-2xl font-black">{progress.totalQuestions}</span></div>
+                    <div className="flex justify-between items-end"><span className="opacity-50 font-bold uppercase tracking-widest text-xs">Time</span><span className="text-2xl font-black">{progress.totalMinutes}m</span></div>
                  </div>
               </div>
               <div className="mt-8 pt-8 border-t border-white/10">
-                 <div className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-40">Overall Accuracy</div>
+                 <div className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-40">Accuracy</div>
                  <div className="flex items-end gap-3">
                     <span className="text-6xl font-black">{progress.averageScore}%</span>
                     <div className="mb-2 w-full h-2 bg-white/10 rounded-full">
@@ -304,72 +302,43 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Analysis Section */}
-      <div className="bg-white rounded-[3.5rem] p-12 shadow-xl border border-slate-100 overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-10 opacity-5">
-           <Brain className="w-64 h-64" />
-        </div>
+      <div className="bg-white rounded-[3.5rem] p-12 shadow-xl border border-slate-100 relative">
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
             <div>
-               <h3 className="text-3xl font-black text-slate-800 flex items-center gap-3">
-                  AI Linguistic Analysis <Sparkles className="w-7 h-7 text-indigo-600" />
-               </h3>
-               <p className="text-slate-400 font-medium max-w-lg">Using Gemini to cross-reference your answers and identify structural gaps in your B2 knowledge.</p>
+               <h3 className="text-3xl font-black text-slate-800 flex items-center gap-3">AI Analysis <Sparkles className="w-7 h-7 text-indigo-600" /></h3>
+               <p className="text-slate-400 font-medium">Linguistic insights based on your recent activity.</p>
             </div>
             <button 
               onClick={runAnalysis} 
               disabled={isAnalyzing || progress.practicedTopicIds.length === 0}
-              className="px-8 py-4 bg-indigo-600 text-white rounded-3xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-3 disabled:opacity-50"
+              className="px-8 py-4 bg-indigo-600 text-white rounded-3xl font-black shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-3 disabled:opacity-50"
             >
-              {isAnalyzing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-              {aiAnalysis ? 'Update Analysis' : 'Analyze My Performance'}
+              {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+              {aiAnalysis ? 'Update Report' : 'Generate Report'}
             </button>
           </div>
 
           {!aiAnalysis ? (
-            <div className="py-20 flex flex-col items-center text-center">
-               <div className="p-8 bg-slate-50 rounded-full mb-6 text-slate-300">
-                  <Brain className="w-16 h-16" />
-               </div>
-               <p className="text-slate-400 max-w-xs font-medium italic">
-                 {progress.practicedTopicIds.length > 0 
-                  ? "Click the button above to generate your personalized learning report." 
-                  : "Complete at least one unit to unlock deep performance analysis."}
-               </p>
+            <div className="py-20 flex flex-col items-center text-center opacity-40">
+               <Brain className="w-16 h-16 mb-4" />
+               <p className="font-medium italic">Click analyze to see your DELE B2 profile.</p>
             </div>
           ) : (
-            <div className="prose prose-slate max-w-none grid grid-cols-1 md:grid-cols-2 gap-12 mt-8 animate-in fade-in slide-in-from-bottom-4">
-              <article className="prose-headings:text-slate-800 prose-p:text-slate-600 prose-li:text-slate-600 prose-strong:text-indigo-600">
+            <div className="prose prose-slate max-w-none grid grid-cols-1 md:grid-cols-2 gap-12 mt-8">
+              <article>
                 <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
               </article>
-              <div className="space-y-8">
-                 <div className="bg-orange-50 p-8 rounded-[2.5rem] border border-orange-100">
-                    <h4 className="text-orange-800 font-black mb-4 flex items-center gap-2">
-                       <AlertTriangle className="w-5 h-5" /> Critical Review Areas
-                    </h4>
-                    <div className="space-y-4">
+              <div className="space-y-6">
+                 <div className="bg-orange-50 p-6 rounded-3xl border border-orange-100">
+                    <h4 className="text-orange-800 font-black mb-4 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Priorities</h4>
+                    <div className="space-y-2">
                        {GRAMMAR_TOPICS
                          .filter(t => progress.practicedTopicIds.includes(t.id) && (progress.topicMastery[t.id] || 0) < 70)
                          .map(t => (
-                           <div key={t.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-orange-200 shadow-sm">
+                           <div key={t.id} className="flex justify-between p-3 bg-white rounded-xl border border-orange-200">
                               <span className="font-bold text-slate-700">{t.name}</span>
                               <span className="text-orange-600 font-black">{progress.topicMastery[t.id]}%</span>
-                           </div>
-                         ))}
-                    </div>
-                 </div>
-                 <div className="bg-green-50 p-8 rounded-[2.5rem] border border-green-100">
-                    <h4 className="text-green-800 font-black mb-4 flex items-center gap-2">
-                       <CheckCircle className="w-5 h-5" /> Mastered Concepts
-                    </h4>
-                    <div className="space-y-4">
-                       {GRAMMAR_TOPICS
-                         .filter(t => progress.practicedTopicIds.includes(t.id) && (progress.topicMastery[t.id] || 0) >= 85)
-                         .map(t => (
-                           <div key={t.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border-green-200 shadow-sm">
-                              <span className="font-bold text-slate-700">{t.name}</span>
-                              <span className="text-green-600 font-black">{progress.topicMastery[t.id]}%</span>
                            </div>
                          ))}
                     </div>

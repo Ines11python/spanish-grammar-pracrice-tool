@@ -6,15 +6,11 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateSpanishQuestions(topics: string[], level: Level, count: number = 10): Promise<Question[]> {
   const topicsString = topics.join(", ");
-  const prompt = `Act as a DELE examiner. Create ${count} NEW and UNIQUE multiple-choice Spanish grammar questions.
-  Level: ${level}.
-  Topics to cover: [${topicsString}].
-  
-  Requirements:
-  - Language of instruction/explanation: ENGLISH.
-  - Sentence style: Natural, sophisticated Spanish. Use "___" for the blank.
-  - Options: Provide exactly 4 plausible choices.
-  - Explanation: Write a detailed academic explanation in ENGLISH.`;
+  // 精简 Prompt 以加快 Flash 模型响应速度
+  const prompt = `Task: DELE B2 Spanish Exam. Create ${count} unique MCQs.
+  Topics: ${topicsString}. Level: ${level}.
+  JSON Structure: Array of {id, sentence (use "___"), options (4), correctAnswer, explanation (short, English), grammarTopic, level}.
+  Rule: Use natural, advanced Spanish. No headers or markdown blocks outside JSON.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -41,43 +37,38 @@ export async function generateSpanishQuestions(topics: string[], level: Level, c
   });
 
   try {
-    // Safely parse JSON from response.text, handling potential undefined values.
     return JSON.parse(response.text || "[]");
   } catch (error) {
+    console.error("JSON Parsing failed", error);
     return [];
   }
 }
 
 export async function fetchGrammarReference(topicName: string): Promise<string> {
+  // 强制要求 GFM 表格语法以防止格式错乱
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Act as a professional Spanish teacher. Create a concise English-language grammar "Cheat Sheet" for: "${topicName}". Use standard Markdown.`,
+    contents: `Create a concise English "Cheat Sheet" for Spanish grammar: "${topicName}". 
+    MANDATORY: 
+    - Use Markdown tables for conjugations. 
+    - Table format: | Header | Header | followed by |---|---| lines.
+    - Focus on B2 nuances.`,
   });
   return response.text || "No reference available.";
 }
 
-/**
- * Generates an AI analysis of user weaknesses and provides a study plan.
- */
 export async function generateWeaknessAnalysis(masteryData: Record<string, number>, topics: any[]): Promise<string> {
   const performanceReport = Object.entries(masteryData).map(([id, score]) => {
     const topic = topics.find(t => t.id === id);
-    return `${topic?.name} (${topic?.category}): ${score}% mastery`;
-  }).join("\n");
+    return `${topic?.name}: ${score}%`;
+  }).join(", ");
 
-  if (!performanceReport) return "Study more units to unlock AI performance analysis!";
+  if (!performanceReport) return "Study more units to unlock analysis!";
 
-  const prompt = `Act as a DELE B2 Academic Advisor. Analyze the following Spanish student performance data and provide a strategic study plan in English.
-  
-  Student Performance:
-  ${performanceReport}
-  
-  Structure your response in Markdown:
-  1. ### 🔍 Core Weaknesses: Identify patterns (e.g., "Difficulty with mood distinction" or "Weak verb endings").
-  2. ### 💡 Strategic Advice: Specific tips to overcome these hurdles.
-  3. ### 📅 Recommended Next Steps: Prioritize 3 topics to study next.
-  
-  Keep it professional, encouraging, and highly specific to Spanish grammar.`;
+  const prompt = `Analyze: ${performanceReport}. Provide a short Markdown study plan for a DELE B2 student (English). Use:
+  1. ### 🔍 Core Weaknesses
+  2. ### 💡 Advice
+  3. ### 📅 Next Steps`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
