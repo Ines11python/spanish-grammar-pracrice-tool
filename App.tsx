@@ -5,7 +5,7 @@ import { Button } from './components/Button';
 import { QuizSession } from './components/QuizSession';
 import { generateSpanishQuestions, fetchGrammarReference, generateWeaknessAnalysis } from './geminiService';
 import { Level, Question, UserProgress } from './types';
-import { GRAMMAR_TOPICS, INITIAL_USER_PROGRESS, GRAMMAR_CATEGORIES } from './constants.tsx';
+import { GRAMMAR_TOPICS, INITIAL_USER_PROGRESS, GRAMMAR_CATEGORIES } from './constants';
 import { 
   CheckCircle, Sparkles, Trophy, 
   Layers, RefreshCw, Clock, Flame, 

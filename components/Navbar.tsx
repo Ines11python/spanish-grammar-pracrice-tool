@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { BookOpen, GraduationCap, Trophy, Settings } from 'lucide-react';
+import { BookOpen, GraduationCap, Trophy } from 'lucide-react';
 
 interface NavbarProps {
-  onNavigate: (view: 'dashboard' | 'stats' | 'settings') => void;
+  onNavigate: (view: 'dashboard' | 'stats' | 'quiz') => void;
   activeView: string;
 }
 
