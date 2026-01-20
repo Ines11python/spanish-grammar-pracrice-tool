@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Question } from '../types';
 import { Button } from './Button';
-import { CheckCircle2, XCircle, ChevronRight, ArrowLeft, Info, BookOpen } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronRight, ArrowLeft, Info, BookOpen, HelpCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -63,6 +63,11 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full -mr-16 -mt-16 -z-10" />
           
           <div className="mb-10">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                {currentQuestion.grammarTopic}
+              </span>
+            </div>
             <h2 className="text-3xl md:text-4xl font-black leading-tight text-slate-800">
               {currentQuestion.sentence.split('___').map((part, i, arr) => (
                 <React.Fragment key={i}>
@@ -108,12 +113,50 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
           </div>
 
           {isAnswered && (
-            <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 animate-in fade-in slide-in-from-top-4">
-              <div className="flex items-center gap-3 mb-4 text-indigo-700 font-black uppercase tracking-widest text-sm">
-                <Info className="w-5 h-5" />
-                <span>Análisis Lingüístico</span>
+            <div className="space-y-6 animate-in fade-in slide-in-from-top-4">
+              {/* Question Specific Explanation */}
+              <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
+                <div className="flex items-center gap-3 mb-4 text-indigo-700 font-black uppercase tracking-widest text-sm">
+                  <Info className="w-5 h-5" />
+                  <span>¿Por qué esta respuesta?</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed font-medium italic text-lg">{currentQuestion.explanation}</p>
               </div>
-              <p className="text-slate-600 leading-relaxed font-medium italic text-lg">{currentQuestion.explanation}</p>
+
+              {/* General Grammar Reference */}
+              <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border-2 border-slate-100 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
+                  <BookOpen className="w-48 h-48" />
+                </div>
+
+                <div className="flex items-center gap-4 mb-8 text-indigo-600 relative z-10">
+                  <div className="p-3 bg-indigo-50 rounded-2xl">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Conceptos Clave</h3>
+                    <h4 className="text-2xl font-black tracking-tight text-slate-800">Understanding {currentQuestion.grammarTopic}</h4>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 mb-8 flex gap-4 items-start relative z-10">
+                  <HelpCircle className="w-5 h-5 text-amber-600 shrink-0 mt-1" />
+                  <div>
+                    <p className="font-bold text-amber-800 text-sm">Don't know what this is?</p>
+                    <p className="text-amber-700 text-sm">Review the guide below to learn the rules and conjugation patterns for this time tense.</p>
+                  </div>
+                </div>
+
+                <article className="prose prose-slate prose-base max-w-none relative z-10
+                  prose-table:w-full prose-table:rounded-2xl prose-table:overflow-hidden prose-table:border-hidden prose-table:shadow-sm
+                  prose-thead:bg-slate-900 prose-thead:text-white
+                  prose-th:px-4 prose-th:py-3 prose-th:text-left
+                  prose-td:px-4 prose-td:py-3 prose-td:border-b prose-td:border-slate-100
+                  prose-headings:text-slate-800 prose-headings:font-black
+                  prose-p:text-slate-600 prose-li:text-slate-600 prose-strong:text-indigo-600">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{referenceText}</ReactMarkdown>
+                </article>
+              </div>
             </div>
           )}
 
@@ -130,28 +173,6 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
             )}
           </div>
         </div>
-      </div>
-
-      <div className="bg-white rounded-[3.5rem] p-10 md:p-16 border border-slate-200 shadow-sm relative">
-        <div className="flex items-center gap-4 mb-10 text-indigo-600">
-          <div className="p-4 bg-indigo-50 rounded-[1.5rem]">
-            <BookOpen className="w-8 h-8" />
-          </div>
-          <div>
-             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Guía de Estudio</h3>
-             <h4 className="text-3xl font-black tracking-tight text-slate-800">{currentQuestion.grammarTopic}</h4>
-          </div>
-        </div>
-        
-        <article className="prose prose-slate prose-lg max-w-none 
-          prose-table:w-full prose-table:rounded-[1.5rem] prose-table:overflow-hidden prose-table:border-hidden prose-table:shadow-sm
-          prose-thead:bg-slate-900 prose-thead:text-white
-          prose-th:px-6 prose-th:py-4 prose-th:text-left
-          prose-td:px-6 prose-td:py-4 prose-td:border-b prose-td:border-slate-100
-          prose-headings:text-slate-800 prose-headings:font-black
-          prose-p:text-slate-600 prose-li:text-slate-600 prose-strong:text-indigo-600">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{referenceText}</ReactMarkdown>
-        </article>
       </div>
     </div>
   );

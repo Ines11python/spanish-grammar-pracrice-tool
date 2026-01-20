@@ -6,7 +6,6 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateSpanishQuestions(topics: string[], level: Level, count: number = 10): Promise<Question[]> {
   const topicsString = topics.join(", ");
-  // 精简 Prompt 以加快 Flash 模型响应速度
   const prompt = `Task: DELE B2 Spanish Exam. Create ${count} unique MCQs.
   Topics: ${topicsString}. Level: ${level}.
   JSON Structure: Array of {id, sentence (use "___"), options (4), correctAnswer, explanation (short, English), grammarTopic, level}.
@@ -45,14 +44,20 @@ export async function generateSpanishQuestions(topics: string[], level: Level, c
 }
 
 export async function fetchGrammarReference(topicName: string): Promise<string> {
-  // 强制要求 GFM 表格语法以防止格式错乱
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Create a concise English "Cheat Sheet" for Spanish grammar: "${topicName}". 
+    contents: `Create a comprehensive English "Grammar Guide" for Spanish: "${topicName}". 
+    
+    REQUIRED SECTIONS:
+    1. **Overview**: What is this grammar point?
+    2. **When to Use**: Clear rules, contexts, or triggers (especially for B2 level).
+    3. **How to Use**: Conjugation rules or structural patterns. 
+    4. **Conjugation Table**: A Markdown table showing Regular AR/ER/IR and major Irregulars if applicable.
+    5. **Examples**: 3-4 natural sentences with translations.
+
     MANDATORY: 
-    - Use Markdown tables for conjugations. 
-    - Table format: | Header | Header | followed by |---|---| lines.
-    - Focus on B2 nuances.`,
+    - Use GFM Markdown tables (| Header | Header | followed by |---|---|).
+    - Maintain a professional, encouraging tone.`,
   });
   return response.text || "No reference available.";
 }

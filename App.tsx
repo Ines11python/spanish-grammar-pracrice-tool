@@ -7,16 +7,17 @@ import { generateSpanishQuestions, fetchGrammarReference, generateWeaknessAnalys
 import { Question, UserProgress } from './types';
 import { GRAMMAR_TOPICS, INITIAL_USER_PROGRESS, GRAMMAR_CATEGORIES } from './constants';
 import { 
-  CheckCircle, Sparkles, Trophy, 
+  Sparkles, Trophy, 
   Layers, RefreshCw, Flame, 
   Brain, TrendingUp, AlertTriangle, Play,
-  ChevronRight, Loader2
+  ChevronRight, Loader2, BookOpen
 } from 'lucide-react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, 
   ResponsiveContainer
 } from 'recharts';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'dashboard' | 'stats' | 'quiz'>('dashboard');
@@ -65,7 +66,6 @@ const App: React.FC = () => {
         refTitle = topic?.name || "";
       }
 
-      // 并行请求以节省时间
       const [qs, ref] = await Promise.all([
         generateSpanishQuestions(topicsToFetch, progress.level, 10),
         isMixed ? Promise.resolve(`## Mixed Review\nFocused on your recently practiced topics.`) : fetchGrammarReference(refTitle)
@@ -157,12 +157,8 @@ const App: React.FC = () => {
         </div>
         <h2 className="text-2xl font-black text-slate-800 mb-2 italic">Preparando la lección...</h2>
         <p className="text-slate-500 font-medium max-w-sm">
-          Gemini is crafting 10 custom DELE B2 challenges and a cheat sheet just for you.
+          Gemini is crafting custom DELE B2 challenges and detailed grammar notes just for you.
         </p>
-        <div className="mt-12 p-4 bg-amber-50 rounded-2xl border border-amber-100 max-w-xs">
-          <p className="text-xs text-amber-800 font-bold uppercase tracking-widest mb-2">Pro Tip</p>
-          <p className="text-sm text-amber-700 italic">"Subjunctive flows better when you focus on the emotion behind the choice."</p>
-        </div>
       </div>
     );
   }
@@ -181,17 +177,19 @@ const App: React.FC = () => {
               <p className="text-sm text-slate-500 font-medium">Mastery: {progress.topicMastery[recommendedTopic?.id || ''] || 0}%</p>
             </div>
           </div>
-          <Button size="lg" onClick={() => startQuiz(recommendedTopic?.id || '')} className="rounded-2xl shadow-lg shadow-indigo-200">
-            Improve This <Play className="ml-2 w-4 h-4 fill-current" />
-          </Button>
+          <div className="flex gap-4">
+            <Button size="lg" onClick={() => startQuiz(recommendedTopic?.id || '')} className="rounded-2xl shadow-lg shadow-indigo-200">
+              Start Quiz <Play className="ml-2 w-4 h-4 fill-current" />
+            </Button>
+          </div>
         </div>
       )}
 
       <div className="mb-16 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-slate-200 pb-12">
         <div className="flex-1">
-          <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter italic">¡Hispania!</h1>
+          <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter italic">Grammar Español</h1>
           <p className="text-xl text-slate-500 max-w-2xl leading-relaxed font-medium">
-            Advanced DELE B2 Lab. Dynamic drills to build your mastery.
+            Advanced DELE B2 Laboratory. Dynamic drills with integrated grammar guides to master the Spanish language.
           </p>
         </div>
         <div className="flex gap-4 w-full lg:w-auto">
@@ -199,8 +197,8 @@ const App: React.FC = () => {
             onClick={() => setView('stats')}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 px-8 py-5 rounded-[2rem] font-bold hover:bg-slate-50 transition-all shadow-sm"
           >
-            <TrendingUp className="w-5 h-5 text-indigo-500" />
-            Analytics
+            <Trophy className="w-5 h-5 text-indigo-500" />
+            Progreso
           </button>
           <button 
             onClick={() => startQuiz('mixed', true)} 
@@ -236,14 +234,16 @@ const App: React.FC = () => {
                         )}
                       </div>
                       <h3 className="text-2xl font-black text-slate-800 mb-4 leading-tight">{topic.name}</h3>
-                      <p className="text-slate-400 mb-10 leading-relaxed font-medium line-clamp-2">{topic.description}</p>
+                      <p className="text-slate-400 mb-10 leading-relaxed font-medium line-clamp-3">{topic.description}</p>
                     </div>
-                    <button 
-                      onClick={() => startQuiz(topic.id)} 
-                      className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all group-hover:scale-105"
-                    >
-                      Practicar <ChevronRight className="w-5 h-5" />
-                    </button>
+                    <div className="flex flex-col gap-3">
+                      <button 
+                        onClick={() => startQuiz(topic.id)} 
+                        className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all group-hover:scale-105"
+                      >
+                        Quiz Me <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -327,7 +327,7 @@ const App: React.FC = () => {
           ) : (
             <div className="prose prose-slate max-w-none grid grid-cols-1 md:grid-cols-2 gap-12 mt-8">
               <article>
-                <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiAnalysis}</ReactMarkdown>
               </article>
               <div className="space-y-6">
                  <div className="bg-orange-50 p-6 rounded-3xl border border-orange-100">

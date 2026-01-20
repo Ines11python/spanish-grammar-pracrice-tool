@@ -19,7 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, activeView }) => {
             <GraduationCap className="w-6 h-6 text-white" />
           </div>
           <span className="text-xl font-black tracking-tight text-slate-800">
-            Hispania <span className="text-dele-orange">B2</span>
+            Grammar <span className="text-dele-orange">Español</span>
           </span>
         </div>
 
