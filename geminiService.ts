@@ -46,18 +46,37 @@ export async function generateSpanishQuestions(topics: string[], level: Level, c
 export async function fetchGrammarReference(topicName: string): Promise<string> {
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Create a comprehensive English "Grammar Guide" for Spanish: "${topicName}". 
-    
-    REQUIRED SECTIONS:
-    1. **Overview**: What is this grammar point?
-    2. **When to Use**: Clear rules, contexts, or triggers (especially for B2 level).
-    3. **How to Use**: Conjugation rules or structural patterns. 
-    4. **Conjugation Table**: A Markdown table showing Regular AR/ER/IR and major Irregulars if applicable.
-    5. **Examples**: 3-4 natural sentences with translations.
+    contents: `Create a professional and extremely focused English-language Spanish Grammar Guide for: "${topicName}".
 
-    MANDATORY: 
-    - Use GFM Markdown tables (| Header | Header | followed by |---|---|).
-    - Maintain a professional, encouraging tone.`,
+    MANDATORY RULES:
+    1. THE CONTENT MUST BE IN ENGLISH (except for Spanish conjugation examples).
+    2. DO NOT include generic "Introduction" or "Importance of Spanish" filler.
+    3. STICK TO THE TOPIC: If the topic is "${topicName}", explain ONLY "${topicName}".
+    
+    The guide MUST have these sections:
+    
+    # 1. Definition (What is it?)
+    A 1-sentence technical definition of the grammar point in English.
+    
+    # 2. Usage & Triggers (When to use?)
+    List the specific triggers and logical reasons in English. For example, if it's Present Subjunctive, list English categories like Wishes, Emotions, Doubts, and specific Spanish trigger phrases (e.g., "Es fundamental que...", "Dudo que...").
+    
+    # 3. Verb Transformations (How to conjugate?)
+    Explain the conjugation rule in English.
+    Provide a Markdown Table for ALL endings:
+    | Pronoun | -ar verbs | -er / -ir verbs |
+    |---|---|---|
+    | Yo | ... | ... |
+    | Tú | ... | ... |
+    | Él/Ella/Ud | ... | ... |
+    | Nosotros | ... | ... |
+    | Vosotros | ... | ... |
+    | Ellos/Ellas/Uds | ... | ... |
+    
+    # 4. Key Irregulars
+    List only the 4 most critical irregulars for this specific tense.
+
+    Style: Professional, clean, and DELE B2 level depth.`,
   });
   return response.text || "No reference available.";
 }

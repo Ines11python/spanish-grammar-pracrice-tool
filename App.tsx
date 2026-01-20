@@ -10,7 +10,7 @@ import {
   Sparkles, Trophy, 
   Layers, RefreshCw, Flame, 
   Brain, TrendingUp, AlertTriangle, Play,
-  ChevronRight, Loader2, BookOpen
+  ChevronRight, Loader2
 } from 'lucide-react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, 
@@ -179,7 +179,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex gap-4">
             <Button size="lg" onClick={() => startQuiz(recommendedTopic?.id || '')} className="rounded-2xl shadow-lg shadow-indigo-200">
-              Start Quiz <Play className="ml-2 w-4 h-4 fill-current" />
+              Quiz Me <Play className="ml-2 w-4 h-4 fill-current" />
             </Button>
           </div>
         </div>
@@ -236,14 +236,12 @@ const App: React.FC = () => {
                       <h3 className="text-2xl font-black text-slate-800 mb-4 leading-tight">{topic.name}</h3>
                       <p className="text-slate-400 mb-10 leading-relaxed font-medium line-clamp-3">{topic.description}</p>
                     </div>
-                    <div className="flex flex-col gap-3">
-                      <button 
-                        onClick={() => startQuiz(topic.id)} 
-                        className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all group-hover:scale-105"
-                      >
-                        Quiz Me <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => startQuiz(topic.id)} 
+                      className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all group-hover:scale-105"
+                    >
+                      Quiz Me <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
                 );
               })}
