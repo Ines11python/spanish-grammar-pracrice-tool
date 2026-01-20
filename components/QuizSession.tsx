@@ -86,7 +86,7 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
             {currentQuestion.options.map((option) => {
               const isCorrect = option === currentQuestion.correctAnswer;
               const isSelected = option === selectedOption;
@@ -112,6 +112,20 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
             })}
           </div>
 
+          {/* New "Next Question" Position (Immediately after options) */}
+          <div className="mb-10 flex justify-end">
+            {!isAnswered ? (
+              <Button size="lg" onClick={handleCheckAnswer} disabled={!selectedOption} className="w-full md:w-auto rounded-[2rem] py-5 px-10 text-lg shadow-xl shadow-indigo-100">
+                Check Answer
+              </Button>
+            ) : (
+              <Button size="lg" onClick={handleNext} className="w-full md:w-auto rounded-[2rem] py-5 px-10 text-lg shadow-xl shadow-indigo-100 bg-slate-900 text-white hover:bg-indigo-600">
+                {currentIndex < questions.length - 1 ? 'Next Question' : 'Finish Session'}
+                <ChevronRight className="ml-2 w-5 h-5" />
+              </Button>
+            )}
+          </div>
+
           {isAnswered && (
             <div className="space-y-10 animate-in fade-in slide-in-from-top-4">
               {/* Specific Trigger Analysis */}
@@ -123,7 +137,7 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
                    <div className="p-2 bg-indigo-600 rounded-lg text-white">
                       <Zap className="w-5 h-5" />
                    </div>
-                  <span className="font-black uppercase tracking-[0.2em] text-indigo-800 text-xs">Why this Answer? (Trigger)</span>
+                  <span className="font-black uppercase tracking-[0.2em] text-indigo-800 text-xs">Explanation (Trigger)</span>
                 </div>
                 <div className="space-y-4 relative z-10">
                   <p className="text-slate-800 text-xl font-bold leading-tight">
@@ -156,7 +170,7 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
                     <div>
                       <p className="text-blue-900 font-black text-sm uppercase tracking-widest mb-1">DELE B2 Mastery Notes</p>
                       <p className="text-blue-800 text-sm font-medium leading-relaxed">
-                        Examine the logic below and memorize the conjugation patterns to master this structure.
+                        Examine the logic and conjugation patterns below to master this specific grammar point.
                       </p>
                     </div>
                   </div>
@@ -167,7 +181,7 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
                     prose-strong:text-slate-900 prose-strong:font-black
                     prose-table:w-full prose-table:my-10 prose-table:border-collapse prose-table:rounded-3xl prose-table:overflow-hidden prose-table:border prose-table:border-slate-100 prose-table:shadow-lg
                     prose-thead:bg-slate-900 prose-thead:text-white
-                    [&_thead_th]:text-white [&_thead_th]:p-5 [&_thead_th]:text-center [&_thead_th]:font-black [&_thead_th]:text-xs [&_thead_th]:uppercase [&_thead_th]:tracking-widest
+                    [&_thead_th]:text-white! [&_thead_th]:p-5 [&_thead_th]:text-center [&_thead_th]:font-black [&_thead_th]:text-xs [&_thead_th]:uppercase [&_thead_th]:tracking-widest
                     prose-td:p-5 prose-td:text-center prose-td:border-b prose-td:border-slate-50 prose-td:font-black prose-td:text-slate-800 prose-td:bg-white
                     prose-ul:list-disc prose-ul:pl-6 prose-li:mb-3 prose-li:text-slate-600 prose-li:font-medium">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{referenceText}</ReactMarkdown>
@@ -176,19 +190,6 @@ export const QuizSession: React.FC<QuizSessionProps> = ({ questions, referenceTe
               </div>
             </div>
           )}
-
-          <div className="mt-12 flex justify-end">
-            {!isAnswered ? (
-              <Button size="lg" onClick={handleCheckAnswer} disabled={!selectedOption} className="w-full md:w-auto rounded-[2rem] py-6 px-12 text-xl shadow-xl shadow-indigo-100">
-                Check Answer
-              </Button>
-            ) : (
-              <Button size="lg" onClick={handleNext} className="w-full md:w-auto rounded-[2rem] py-6 px-12 text-xl shadow-xl shadow-indigo-100">
-                {currentIndex < questions.length - 1 ? 'Next Question' : 'Finish Session'}
-                <ChevronRight className="ml-2 w-6 h-6" />
-              </Button>
-            )}
-          </div>
         </div>
       </div>
     </div>

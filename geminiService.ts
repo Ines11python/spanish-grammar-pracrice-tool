@@ -49,21 +49,25 @@ export async function fetchGrammarReference(topicName: string): Promise<string> 
     contents: `Create a professional and extremely focused English-language Spanish Grammar Guide for: "${topicName}".
 
     MANDATORY RULES:
-    1. THE CONTENT MUST BE IN ENGLISH (except for Spanish conjugation examples).
-    2. DO NOT include generic "Introduction" or "Importance of Spanish" filler.
-    3. STICK TO THE TOPIC: If the topic is "${topicName}", explain ONLY "${topicName}".
+    1. THE ENTIRE GUIDE MUST BE IN ENGLISH (except for Spanish conjugation examples).
+    2. USE ENGLISH HEADERS (e.g., "# 1. Definition", "# 2. Usage").
+    3. NO generic filler or "Introduction". Focus ONLY on "${topicName}".
     
-    The guide MUST have these sections:
+    The guide MUST have these sections in this order:
     
-    # 1. Definition (What is it?)
+    # 1. Key Irregulars
+    Immediately list the most critical irregular verbs for this tense (e.g., if Subjunctive, list Ser, Ir, Dar, Estar, Saber). Use bullet points.
+    
+    # 2. What is it? (Definition)
     A 1-sentence technical definition of the grammar point in English.
     
-    # 2. Usage & Triggers (When to use?)
-    List the specific triggers and logical reasons in English. For example, if it's Present Subjunctive, list English categories like Wishes, Emotions, Doubts, and specific Spanish trigger phrases (e.g., "Es fundamental que...", "Dudo que...").
+    # 3. When to use? (Usage & Triggers)
+    Explain the logic and triggers in English. List categories like Doubt, Emotion, Impersonal phrases, etc. 
+    Include specific Spanish examples like "Es fundamental que..." or "Dudo que...".
     
-    # 3. Verb Transformations (How to conjugate?)
+    # 4. How to conjugate? (Verb Transformations)
     Explain the conjugation rule in English.
-    Provide a Markdown Table for ALL endings:
+    Provide a Markdown Table for endings:
     | Pronoun | -ar verbs | -er / -ir verbs |
     |---|---|---|
     | Yo | ... | ... |
@@ -72,9 +76,6 @@ export async function fetchGrammarReference(topicName: string): Promise<string> 
     | Nosotros | ... | ... |
     | Vosotros | ... | ... |
     | Ellos/Ellas/Uds | ... | ... |
-    
-    # 4. Key Irregulars
-    List only the 4 most critical irregulars for this specific tense.
 
     Style: Professional, clean, and DELE B2 level depth.`,
   });
